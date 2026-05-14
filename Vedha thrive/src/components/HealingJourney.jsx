@@ -2,41 +2,35 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
-import { api } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useSiteContent } from '../context/SiteContentContext';
 
 const HealingJourney = () => {
   const navigate = useNavigate();
   const { user, isSubscribed, refreshSubscription } = useAuth();
-  const [journeys, setJourneys] = useState([
-    { id: "soil", title: "Soil: The Rebirth of Vitality", img: "soil.png" },
-    { id: "seed", title: "Seed: Reclaiming Life Force", img: "seed.jpeg" },
-    { id: "food", title: "Food: Restoring Natural Strength", img: "Food.png" },
-    { id: "kitchen", title: "Kitchen: Restoring the Temple", img: "kitchen.png" },
-    { id: "home", title: "Home: Natural Environment", img: "Home.jpeg" },
-    { id: "yoga", title: "Yoga: Achieving Systemic Equilibrium", img: "Yoga.png" },
-    { id: "nature", title: "Nature: Realigning with the Earth", img: "Nature.jpeg" },
-    { id: "rainwater", title: "Rain Water: Fulfilling Our Responsibility", img: "Rainwater.png" }
-  ]);
+  const { cards } = useSiteContent();
+  const [activeCard, setActiveCard] = useState(null);
 
   useEffect(() => {
     AOS.init({ duration: 1000, once: true });
-    api.getHealingPages()
-      .then((pages) => {
-        setJourneys(pages.map((page) => ({
-          id: page.slug,
-          title: page.title,
-          img: page.image || page.bannerImage,
-        })));
-      })
-      .catch((error) => console.error("Failed to load healing journeys", error));
     refreshSubscription().catch(() => {});
   }, []);
 
+  const SLUG_MAP = {
+    "c1": "soil",
+    "c2": "seed",
+    "c3": "food",
+    "c4": "kitchen",
+    "c5": "home",
+    "c6": "yoga",
+    "c7": "nature",
+    "c8": "rainwater",
+  };
+
   const handleCardClick = (id) => {
+    const slug = SLUG_MAP[id] || id;
     if (isSubscribed) {
-      // FIX: Now points correctly to healing-detail
-      navigate(`/healing-detail/${id}`);
+      navigate(`/healing-detail/${slug}`);
     } else {
       navigate(user ? '/subscription' : '/login');
     }
@@ -60,19 +54,61 @@ const HealingJourney = () => {
                 .tagline-desc{font-family: 'Inter', sans-serif;color: #2d332a;}
                 .journey-content h3 { font-size: 1.1rem; color: #2d332a; margin: 0 0 8px 0; }
                 .status-text { font-size: 0.85rem; font-weight: 600; color: #d4a34d; }
+                
+                /* Modal Styling */
+                .card-modal-overlay {
+                  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                  background: rgba(0,0,0,0.8); z-index: 10000;
+                  display: flex; align-items: center; justify-content: center; padding: 20px;
+                  backdrop-filter: blur(5px);
+                }
+                .card-modal {
+                  background: #fdfcf7; max-width: 600px; width: 100%; border-radius: 24px;
+                  overflow: hidden; border: 1px solid #d4a34d; position: relative;
+                }
+                .modal-close {
+                  position: absolute; top: 15px; right: 15px; width: 32px; height: 32px;
+                  background: #2d332a; color: #d4a34d; border-radius: 50%;
+                  display: flex; align-items: center; justify-content: center; cursor: pointer;
+                  font-size: 1.2rem; border: none; z-index: 2;
+                }
+                .modal-img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+                .modal-body { padding: 30px; }
+                .modal-body h3 { font-family: 'Cinzel Decorative', cursive; color: #2d332a; font-size: 1.5rem; margin-bottom: 10px; }
+                .modal-body p { color: #4b5563; line-height: 1.6; margin-bottom: 25px; }
+                .modal-action { 
+                  display: block; width: 100%; padding: 14px; background: #d4a34d; 
+                  color: white !important; border-radius: 12px; text-align: center; 
+                  font-weight: 700; text-decoration: none; border: none; cursor: pointer;
+                }
+
                 @media (max-width: 768px) { .journey-header { flex-direction: column; gap: 15px; text-align: center; } }
             `}</style>
+
+      {activeCard && (
+        <div className="card-modal-overlay" onClick={() => setActiveCard(null)}>
+          <div className="card-modal" onClick={e => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setActiveCard(null)}>&times;</button>
+            <img src={activeCard.image} alt={activeCard.title} className="modal-img" />
+            <div className="modal-body">
+              <h3>{activeCard.title}</h3>
+              <p>{activeCard.description}</p>
+              <button className="modal-action" onClick={() => { handleCardClick(activeCard.id); setActiveCard(null); }}>
+                {isSubscribed ? "Access Now" : "Unlock Journey"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="journey-header">
         <h2 style={{ fontFamily: 'Cinzel Decorative, cursive', fontSize: '2.5rem', margin: 0 }}>
           Let's Start Our - <span style={{ color: '#d4a34d' }}>Healing Journey</span>
-
         </h2>
         <p className="tagline-desc" data-aos="fade-up" data-aos-delay="200">
           Tracing the Path of Disconnection
         </p>
 
-        {/* <p>Returning to the Source, Restoring Balance</p> */}
         {isSubscribed ? (
           <div className="subscribed-status-btn"><i className="fa fa-check-circle"></i> Subscribed</div>
         ) : (
@@ -81,15 +117,15 @@ const HealingJourney = () => {
       </div>
 
       <div className="journey-grid">
-        {journeys.map((item, i) => (
-          <div key={i} className="journey-card" data-aos="fade-up" data-aos-delay={i * 100} onClick={() => handleCardClick(item.id)}>
-            <div className="img-container">
-              <img src={item.img} alt={item.title} />
+        {cards.map((item, i) => (
+          <div key={item.id} className="journey-card" data-aos="fade-up" data-aos-delay={i * 100}>
+            <div className="img-container" onClick={() => setActiveCard(item)}>
+              <img src={item.image} alt={item.title} />
               {!isSubscribed && (
                 <div className="lock-overlay"><i className="fa fa-lock"></i></div>
               )}
             </div>
-            <div className="journey-content">
+            <div className="journey-content" onClick={() => handleCardClick(item.id)}>
               <h3>{item.title}</h3>
               <span className="status-text">{isSubscribed ? "WATCH NOW" : "LOCKED - ₹99"}</span>
             </div>

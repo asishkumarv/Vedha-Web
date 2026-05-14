@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
 import { SiteContent, defaultContent, HeroContent, SectionContent, CardContent as CardContentType, FooterContent } from "@/data/mockContent";
 import { api } from "@/lib/api";
+import { toast } from "sonner";
 
 interface ContentContextType {
   content: SiteContent;
@@ -9,7 +10,9 @@ interface ContentContextType {
   updateSection: (id: string, data: Partial<SectionContent>) => void;
   updateCard: (id: string, data: Partial<CardContentType>) => void;
   updateFooter: (footer: Partial<FooterContent>) => void;
+  saveChanges: () => Promise<void>;
   resetAll: () => void;
+  isSaving: boolean;
   uploadedImages: UploadedImage[];
   addUploadedImage: (img: UploadedImage) => void;
   removeUploadedImage: (id: string) => void;
@@ -35,6 +38,7 @@ export const useContent = () => {
 export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [content, setContent] = useState<SiteContent>(structuredClone(defaultContent));
   const [originalContent, setOriginalContent] = useState<SiteContent>(structuredClone(defaultContent));
+  const [isSaving, setIsSaving] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<UploadedImage[]>([]);
 
   useEffect(() => {
@@ -59,57 +63,59 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
       .catch((error) => console.error("Failed to load media assets", error));
   }, []);
 
-  const persist = useCallback((next: SiteContent) => {
-    api.saveSiteContent(next).catch((error) => console.error("Failed to save site content", error));
-  }, []);
+  const saveChanges = useCallback(async () => {
+    setIsSaving(true);
+    try {
+      await api.saveSiteContent(content);
+      setOriginalContent(structuredClone(content));
+      toast.success("Changes saved successfully", {
+        description: "Your website content has been updated.",
+      });
+    } catch (error) {
+      console.error("Failed to save site content", error);
+      toast.error("Failed to save changes", {
+        description: "Please try again or check your connection.",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  }, [content]);
 
   const updateHero = useCallback((hero: Partial<HeroContent>) => {
-    setContent(prev => {
-      const next = { ...prev, hero: { ...prev.hero, ...hero } };
-      persist(next);
-      return next;
-    });
-  }, [persist]);
+    setContent(prev => ({ ...prev, hero: { ...prev.hero, ...hero } }));
+  }, []);
 
   const updateSection = useCallback((id: string, data: Partial<SectionContent>) => {
-    setContent(prev => {
-      const next = {
-        ...prev,
-        sections: prev.sections.map(s => s.id === id ? { ...s, ...data } : s),
-      };
-      persist(next);
-      return next;
-    });
-  }, [persist]);
+    setContent(prev => ({
+      ...prev,
+      sections: prev.sections.map(s => s.id === id ? { ...s, ...data } : s),
+    }));
+  }, []);
 
   const updateCard = useCallback((id: string, data: Partial<CardContentType>) => {
-    setContent(prev => {
-      const next = {
-        ...prev,
-        cards: prev.cards.map(c => c.id === id ? { ...c, ...data } : c),
-      };
-      persist(next);
-      return next;
-    });
-  }, [persist]);
+    setContent(prev => ({
+      ...prev,
+      cards: prev.cards.map(c => c.id === id ? { ...c, ...data } : c),
+    }));
+  }, []);
 
   const updateFooter = useCallback((footer: Partial<FooterContent>) => {
-    setContent(prev => {
-      const next = { ...prev, footer: { ...prev.footer, ...footer } };
-      persist(next);
-      return next;
-    });
-  }, [persist]);
+    setContent(prev => ({ ...prev, footer: { ...prev.footer, ...footer } }));
+  }, []);
 
   const resetAll = useCallback(() => {
     api.resetSiteContent<SiteContent>()
-      .then((data) => setContent(data))
+      .then((data) => {
+        setContent(data);
+        setOriginalContent(structuredClone(data));
+        toast.info("Content reset to defaults");
+      })
       .catch(() => {
         const fallback = structuredClone(defaultContent);
         setContent(fallback);
-        persist(fallback);
+        toast.error("Reset failed, using local defaults");
       });
-  }, [persist]);
+  }, []);
 
   const addUploadedImage = useCallback((img: UploadedImage) => {
     setUploadedImages(prev => [img, ...prev.filter(i => i.url !== img.url)]);
@@ -124,7 +130,7 @@ export const ContentProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, []);
 
   return (
-    <ContentContext.Provider value={{ content, originalContent, updateHero, updateSection, updateCard, updateFooter, resetAll, uploadedImages, addUploadedImage, removeUploadedImage }}>
+    <ContentContext.Provider value={{ content, originalContent, updateHero, updateSection, updateCard, updateFooter, saveChanges, resetAll, isSaving, uploadedImages, addUploadedImage, removeUploadedImage }}>
       {children}
     </ContentContext.Provider>
   );

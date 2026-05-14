@@ -2,9 +2,10 @@ import React from "react";
 import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { AdminSidebar } from "./AdminSidebar";
 import { useLocation, Link, useNavigate } from "@tanstack/react-router";
-import { Eye, LogOut } from "lucide-react";
+import { Eye, LogOut, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/AuthContext";
+import { useContent } from "@/context/ContentContext";
 
 const pageTitles: Record<string, string> = {
   "/": "Dashboard",
@@ -25,6 +26,7 @@ function AdminContent({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const pathname = location.pathname;
   const { logout, userEmail } = useAuth();
+  const { saveChanges, isSaving } = useContent();
   const navigate = useNavigate();
   const title = pageTitles[pathname] || (pathname.startsWith("/healing-journey/") ? "Edit Healing Page" : "Dashboard");
 
@@ -33,10 +35,11 @@ function AdminContent({ children }: { children: React.ReactNode }) {
     navigate({ to: "/login", replace: true });
   };
 
+  const isEditPage = pathname.startsWith("/edit-") || pathname === "/damage-journey" || pathname === "/other-sections" || pathname.startsWith("/healing-journey/");
+
   return (
     <>
       <AdminSidebar />
-      {/* CHANGE #3: Main content expands to full width when sidebar collapses with smooth transition */}
       <div className="flex-1 flex flex-col min-w-0 transition-all duration-300 ease-in-out">
         <header className="h-14 flex items-center justify-between border-b bg-card px-4 shrink-0">
           <div className="flex items-center gap-3">
@@ -44,6 +47,12 @@ function AdminContent({ children }: { children: React.ReactNode }) {
             <h1 className="text-lg font-semibold text-foreground" style={{ fontFamily: "var(--font-heading)" }}>{title}</h1>
           </div>
           <div className="flex items-center gap-2">
+            {isEditPage && (
+              <Button size="sm" onClick={saveChanges} disabled={isSaving} className="hidden sm:flex">
+                {isSaving ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Save className="h-4 w-4 mr-1" />}
+                Save Changes
+              </Button>
+            )}
             {pathname !== "/preview" && (
               <Link to="/preview">
                 <Button size="sm" variant="outline">

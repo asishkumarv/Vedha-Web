@@ -4,7 +4,7 @@ import 'aos/dist/aos.css';
 import { useSiteContent } from '../context/SiteContentContext';
 
 const HealingProcess = () => {
-  const [activeImg, setActiveImg] = useState(null);
+  const [activeItem, setActiveItem] = useState(null);
   const content = useSiteContent();
 
   useEffect(() => {
@@ -92,7 +92,7 @@ const HealingProcess = () => {
       desc: "Our biology is designed for the outdoors, yet our lives have moved entirely inside.",
       points: [
         "The Impact: Sunlight regulates our circadian rhythms and nature exposure regulates stress.",
-        "We have become disconnected from our source, leading to biological disharmony."
+        "We have become disconnected from our source, leading to biological dish disharmony."
       ]
     },
     {
@@ -107,6 +107,7 @@ const HealingProcess = () => {
       ]
     }
   ];
+
   const sections = content?.sections?.slice(2).map((section) => ({
     id: section.id,
     title: section.title,
@@ -117,20 +118,17 @@ const HealingProcess = () => {
 
   return (
     <section className="healing-journey-container">
-      {/* Import the traditional fonts */}
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;600&display=swap');
 
         .healing-journey-container {
           background-color: #fdfcf7;
-        
           color: #2d332a;
           padding: 0;
         }
 
         .journey-section {
           max-width: 1400px;
-          // margin: 0 auto 120px;
           padding: 0 20px;
         }
 
@@ -139,11 +137,10 @@ const HealingProcess = () => {
           margin-bottom: 60px;
         }
 
-        /* ROYAL TITLE STYLE */
         .title-line {
           font-family: 'Cinzel Decorative', cursive;
           font-size: clamp(2rem, 5vw, 2.5rem);
-          color: #8b6b23; /* Deep Antique Gold */
+          color: #8b6b23;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -164,7 +161,6 @@ const HealingProcess = () => {
           align-items: center;
         }
 
-        /* IMAGE COLUMN - INCREASED WIDTH FOR VISIBILITY */
         .column-left {
           flex: 1.5; 
         }
@@ -187,9 +183,7 @@ const HealingProcess = () => {
         .image-frame img {
           width: 100%;
           display: block;
-          image-rendering: -webkit-optimize-contrast;
-          image-rendering: crisp-edges;
-          filter: sepia(5%) contrast(1.05); /* Subtle traditional aging */
+          filter: sepia(5%) contrast(1.05);
         }
 
         .zoom-hint {
@@ -205,28 +199,90 @@ const HealingProcess = () => {
           font-family: 'Inter', sans-serif;
         }
 
-        /* LIGHTBOX MODAL */
-        .lightbox {
+        /* CONTENT MODAL */
+        .lightbox-overlay {
           position: fixed;
-          top: 50%; left: 50%; transform:translate(-50%,-50%); width: 100%; height: 100%;
-          background: rgba(18, 16, 11, 0.95);
+          top: 0; left: 0; width: 100%; height: 100%;
+          background: rgba(18, 16, 11, 0.9);
           z-index: 9999;
           display: flex;
           align-items: center;
           justify-content: center;
-          cursor: zoom-out;
           padding: 20px;
+          backdrop-filter: blur(8px);
         }
 
-        .lightbox img {
-          max-width: 95%;
-          max-height: 95%;
-          border: 8px solid #d4a34d;
-          box-shadow: 0 0 50px rgba(0,0,0,0.8);
-          image-rendering: auto;
+        .lightbox-content {
+          background: #fdfcf7;
+          max-width: 1000px;
+          width: 95%;
+          max-height: 90vh;
+          border-radius: 24px;
+          overflow: hidden;
+          display: grid;
+          grid-template-columns: 1fr 1.2fr;
+          position: relative;
+          box-shadow: 0 50px 100px rgba(0,0,0,0.5);
+          border: 1px solid #d4a34d;
+          cursor: default;
         }
 
-        /* TEXT COLUMN - LORA SERIF FONT */
+        .lightbox-close {
+          position: absolute;
+          top: 20px;
+          right: 20px;
+          width: 40px;
+          height: 40px;
+          background: #2d332a;
+          color: #d4a34d;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          z-index: 10;
+          font-size: 1.5rem;
+          border: 1px solid #d4a34d;
+          transition: 0.3s;
+        }
+        .lightbox-close:hover { background: #d4a34d; color: #2d332a; }
+
+        .lightbox-img-side {
+          background: #000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+        .lightbox-img-side img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+        }
+
+        .lightbox-text-side {
+          padding: 50px;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+        }
+        .lightbox-text-side h3 {
+          font-family: 'Cinzel Decorative', cursive;
+          font-size: 1.8rem;
+          color: #8b6b23;
+          margin-bottom: 20px;
+        }
+        .lightbox-text-side .modal-desc {
+          font-family: 'Lora', serif;
+          font-style: italic;
+          font-size: 1.2rem;
+          color: #4b5563;
+          line-height: 1.6;
+          margin-bottom: 30px;
+          border-left: 3px solid #d4a34d;
+          padding-left: 15px;
+        }
+
         .column-right { 
           flex: 1; 
           font-family: 'Lora', serif;
@@ -268,24 +324,41 @@ const HealingProcess = () => {
           .columns-container { flex-direction: column; gap: 40px; }
           .column-left { width: 100%; }
           .row-reverse { flex-direction: column; }
+          .lightbox-content { grid-template-columns: 1fr; }
+          .lightbox-img-side { height: 300px; }
+          .lightbox-text-side { padding: 30px; }
         }
       `}</style>
 
-      {/* Lightbox Mode */}
-      {activeImg && (
-        <div className="lightbox" onClick={() => setActiveImg(null)}>
-          <img src={activeImg} alt="Enlarged Diagram" />
+      {/* Lightbox Modal */}
+      {activeItem && (
+        <div className="lightbox-overlay" onClick={() => setActiveItem(null)}>
+          <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <button className="lightbox-close" onClick={() => setActiveItem(null)}>&times;</button>
+            <div className="lightbox-img-side">
+              <img src={activeItem.img} alt={activeItem.title} />
+            </div>
+            <div className="lightbox-text-side">
+              <h3>{activeItem.title}</h3>
+              <p className="modal-desc">{activeItem.desc}</p>
+              <div className="points-list">
+                {activeItem.points.map((point, i) => (
+                  <li key={i} className="point-item">{point}</li>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
       )}
-      <div className="journey-header">
-        <h2 style={{ fontFamily: 'Cinzel Decorative, cursive', fontSize: '2.5rem', margin: 0 }}>
-         The <span style={{ color: '#d4a34d' }}>DAMAGE JOURNEY</span>
 
+      <div className="journey-header">
+        <h2 style={{ fontFamily: 'Cinzel Decorative, cursive', fontSize: '2.5rem', margin: 0, textAlign: 'center', paddingTop: '4rem' }}>
+         The <span style={{ color: '#d4a34d' }}>DAMAGE JOURNEY</span>
         </h2>
-        <p className="tagline-desc" data-aos="fade-up" data-aos-delay="200">
+        <p className="tagline-desc" data-aos="fade-up" data-aos-delay="200" style={{ textAlign: 'center', marginBottom: '3rem' }}>
           Tracing the Path of Disconnection
         </p>
-        </div>
+      </div>
 
       {sections.map((section, index) => (
         <div className="journey-section" key={section.id} data-aos="fade-up">
@@ -295,7 +368,7 @@ const HealingProcess = () => {
 
           <div className={`columns-container ${index % 2 !== 0 ? 'row-reverse' : ''}`}>
             <div className="column-left" data-aos={index % 2 === 0 ? "fade-right" : "fade-left"}>
-              <div className="image-frame" onClick={() => setActiveImg(section.img)}>
+              <div className="image-frame" onClick={() => setActiveItem(section)}>
                 <img src={section.img} alt={section.title} />
                 <div className="zoom-hint">Click to read text</div>
               </div>

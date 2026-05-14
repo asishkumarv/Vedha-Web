@@ -36,7 +36,7 @@ function RootComponent() {
     <AuthProvider>
       <ContentProvider>
         <TooltipProvider>
-          <Toaster />
+          <Toaster richColors position="top-right" />
           <Outlet />
         </TooltipProvider>
       </ContentProvider>

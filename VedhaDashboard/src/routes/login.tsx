@@ -31,9 +31,15 @@ function LoginPage() {
     }
     setLoading(true);
     try {
-      const success = await login(email.trim(), password);
-      if (success) navigate({ to: "/", replace: true });
-      else setError("This account is not an admin account.");
+      const success = await login(email.trim(), password, rememberMe);
+      if (success) {
+        // Use a small timeout to ensure context state has propagated
+        setTimeout(() => {
+          navigate({ to: "/", replace: true });
+        }, 10);
+      } else {
+        setError("This account is not an admin account.");
+      }
     } catch {
       setError("Invalid email or password. Please try again.");
     } finally {

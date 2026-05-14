@@ -244,13 +244,19 @@ const HealingDetail = () => {
           <i className="fa fa-arrow-left"></i> BACK TO HEALING JOURNEY
         </Link>
         <h2 className="detail-title" data-aos="fade-down">
-          {data.title.split(':')[0]}: <span style={{ color: '#d4a34d' }}>{data.title.split(':')[1]}</span>
+          {data.title.includes(':') ? (
+            <>
+              {data.title.split(':')[0]}: <span style={{ color: '#d4a34d' }}>{data.title.split(':')[1]}</span>
+            </>
+          ) : (
+            <span style={{ color: '#d4a34d' }}>{data.title}</span>
+          )}
         </h2>
       </div>
 
       <div className="detail-grid-card" data-aos="zoom-in">
         <div className="detail-img-container">
-          <img src={data.image} alt={data.title} />
+          <img src={data.image || data.bannerImage} alt={data.title} />
         </div>
 
         <div className="detail-content">
