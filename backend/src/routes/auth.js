@@ -65,4 +65,25 @@ router.get("/me", requireAuth, async (req, res, next) => {
   }
 });
 
+router.get("/me/progress", requireAuth, async (req, res, next) => {
+  try {
+    const { rows } = await query("SELECT page_slug FROM user_progress WHERE user_id = $1", [req.user.id]);
+    res.json(rows.map(r => r.page_slug));
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/me/progress/:slug", requireAuth, async (req, res, next) => {
+  try {
+    await query(
+      "INSERT INTO user_progress (user_id, page_slug) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+      [req.user.id, req.params.slug]
+    );
+    res.status(201).json({ message: "Progress updated" });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

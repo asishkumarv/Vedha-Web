@@ -72,6 +72,13 @@ async function init() {
       used_in TEXT,
       created_at TIMESTAMPTZ NOT NULL DEFAULT now()
     );
+
+    CREATE TABLE IF NOT EXISTS user_progress (
+      user_id TEXT REFERENCES users(id) ON DELETE CASCADE,
+      page_slug TEXT REFERENCES healing_pages(slug) ON DELETE CASCADE,
+      completed_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      PRIMARY KEY (user_id, page_slug)
+    );
   `);
 
   await query("ALTER TABLE subscriptions ADD COLUMN IF NOT EXISTS user_id TEXT REFERENCES users(id) ON DELETE SET NULL");

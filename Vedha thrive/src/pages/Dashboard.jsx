@@ -1,18 +1,53 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../lib/api';
 
 const Dashboard = () => {
   const { user, subscription } = useAuth();
+  const [guides, setGuides] = useState([]);
+  const [completedSlugs, setCompletedSlugs] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const userName = user?.name || "Guest User"; 
   const userPlan = subscription?.plan ? `${subscription.plan} Plan` : "Free Plan";
+  const isPremium = subscription?.plan?.toLowerCase() === 'premium';
+  const isBasic = subscription?.plan?.toLowerCase() === 'basic';
 
   useEffect(() => {
     AOS.init({ duration: 800, once: true, easing: 'ease-out' });
     window.scrollTo(0, 0);
+
+    const fetchData = async () => {
+      try {
+        const [guidesData, progressData] = await Promise.all([
+          api.getHealingPages(),
+          api.getUserProgress().catch(() => [])
+        ]);
+        setGuides(guidesData);
+        setCompletedSlugs(progressData);
+      } catch (err) {
+        console.error("Failed to fetch dashboard data", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
   }, []);
+
+  const totalGuides = guides.length;
+  const completedCount = completedSlugs.length;
+  const progressPercent = totalGuides > 0 ? (completedCount / totalGuides) * 100 : 0;
+
+  if (loading) {
+    return (
+      <div className="dashboard-container" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+        <p>Loading your healing journey...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-container">
@@ -110,10 +145,10 @@ const Dashboard = () => {
 
           .upgrade-btn {
             display: block;
-            // width: 100%;
+            width: 100%;
             padding: 14px;
             background-color: #d4a34d;
-            color: white;
+            color: white !important;
             text-align: center;
             text-decoration: none;
             border-radius: 12px;
@@ -121,6 +156,7 @@ const Dashboard = () => {
             font-size: 0.95rem;
             transition: all 0.3s ease;
             box-shadow: 0 4px 12px rgba(212, 163, 77, 0.3);
+            margin-top: auto;
           }
 
           .upgrade-btn:hover {
@@ -256,20 +292,24 @@ const Dashboard = () => {
                 <span>{userPlan}</span>
               </div>
             </div>
-            <Link to="/subscription" className="upgrade-btn">Upgrade to Premium</Link>
+            {!isPremium && (
+              <Link to="/subscription" className="upgrade-btn">
+                {isBasic ? 'Upgrade to Premium' : 'Upgrade to Subscribe'}
+              </Link>
+            )}
           </div>
 
           {/* Guides Stats Card */}
           <div className="stat-card" data-aos="fade-up" data-aos-delay="100">
             <div className="stat-label">
               <p>Guides Completed</p>
-              <h3>3/5</h3>
+              <h3>{completedCount}/{totalGuides}</h3>
             </div>
             <div className="progress-container">
-              <div className="progress-bar" style={{ width: '60%' }}></div>
+              <div className="progress-bar" style={{ width: `${progressPercent}%` }}></div>
             </div>
             <p style={{ fontSize: '0.8rem', color: '#8c8c8c', marginTop: '12px' }}>
-              You're doing great! 2 more to unlock your next milestone.
+              {progressPercent === 100 ? "You've finished all guides!" : `Keep going! ${totalGuides - completedCount} more to reach 100%.`}
             </p>
           </div>
 
@@ -294,32 +334,27 @@ const Dashboard = () => {
         </div>
 
         <div className="guides-grid">
-          <GuideLink 
-            title="Soil Health Restoration" 
-            status="Completed" 
-            statusClass="status-completed"
-            icon={<path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8a7 7 0 0 1-7 7c-1 0-1.87-.21-2.63-.58C10.54 18.23 10 19 10 19l-1 1Z"/>} 
-          />
-          <GuideLink 
-            title="Seed Purity Awareness" 
-            status="In Progress" 
-            statusClass="status-progress"
-            icon={<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.29 1.51 4.04 3 5.5l7 7Z"/>} 
-          />
-          <GuideLink 
-            title="Natural Food Guidance" 
-            status="Not Started" 
-            statusClass="status-notstart"
-            icon={<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>} 
-          />
+          {guides.map((guide) => {
+            const isCompleted = completedSlugs.includes(guide.slug);
+            return (
+              <GuideLink 
+                key={guide.slug}
+                slug={guide.slug}
+                title={guide.name} 
+                status={isCompleted ? "Completed" : "Available"} 
+                statusClass={isCompleted ? "status-completed" : "status-progress"}
+                icon={<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>} 
+              />
+            );
+          })}
         </div>
       </div>
     </div>
   );
 };
 
-const GuideLink = ({ title, status, icon, statusClass }) => (
-  <a href="#" className="guide-item" data-aos="fade-up">
+const GuideLink = ({ title, status, icon, statusClass, slug }) => (
+  <Link to={`/healing-detail/${slug}`} className="guide-item" data-aos="fade-up">
     <div className="icon-box">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         {icon}
@@ -329,7 +364,7 @@ const GuideLink = ({ title, status, icon, statusClass }) => (
       <h4>{title}</h4>
       <span className={`status-badge ${statusClass}`}>{status}</span>
     </div>
-  </a>
+  </Link>
 );
 
 export default Dashboard;

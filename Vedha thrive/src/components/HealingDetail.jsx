@@ -8,14 +8,29 @@ const HealingDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [remoteData, setRemoteData] = useState(null);
+  const [isCompleted, setIsCompleted] = useState(false);
 
   useEffect(() => {
     window.scrollTo(0, 0);
     AOS.init({ duration: 1000, once: true });
+    
     api.getHealingPage(id)
       .then(setRemoteData)
       .catch((error) => console.error("Failed to load healing detail", error));
+
+    api.getUserProgress()
+      .then(progress => setIsCompleted(progress.includes(id)))
+      .catch(() => {});
   }, [id]);
+
+  const markComplete = async () => {
+    try {
+      await api.updateUserProgress(id);
+      setIsCompleted(true);
+    } catch (err) {
+      console.error("Failed to mark as complete", err);
+    }
+  };
 
   const healingMap = {
     "soil": {
@@ -252,7 +267,20 @@ const HealingDetail = () => {
             ))}
           </div>
 
-          <div className="detail-footer-text" data-aos="fade-up">
+          <div className="detail-footer-actions" style={{ marginTop: '40px' }}>
+            {isCompleted ? (
+              <div className="completed-badge" style={{ background: '#ecfdf5', color: '#059669', padding: '10px 20px', borderRadius: '50px', display: 'inline-flex', alignItems: 'center', gap: '8px', fontWeight: '700' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Completed
+              </div>
+            ) : (
+              <button onClick={markComplete} className="complete-btn" style={{ background: '#d4a34d', color: '#fff', border: 'none', padding: '12px 24px', borderRadius: '50px', fontWeight: '700', cursor: 'pointer', transition: '0.3s' }}>
+                Mark as Complete
+              </button>
+            )}
+          </div>
+
+          <div className="detail-footer-text" style={{ marginTop: '20px' }} data-aos="fade-up">
             🌿 VedhaThrive — Reclaiming the Balance
           </div>
         </div>
